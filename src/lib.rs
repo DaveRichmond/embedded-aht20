@@ -10,6 +10,9 @@ use embedded_hal as hal;
 #[cfg(feature = "async")]
 use embedded_hal_async as hal;
 
+#[cfg(feature = "defmt")]
+use defmt::info;
+
 use hal::delay::DelayNs;
 use hal::i2c::{I2c, SevenBitAddress};
 
@@ -161,9 +164,14 @@ where
             .await
             .map_err(Error::I2c)?;
 
+        #[cfg(feature = "defmt")]
+        info!("Read: {:#x}", buffer);
         let data = &buffer[..6];
         let crc = buffer[6];
+        #[cfg(not(feature = "skip-crc"))]
         self.check_crc(data, crc)?;
+        #[cfg(feature = "skip-crc")]
+        let _ = self.check_crc(data, crc);
 
         let status = SensorStatus::from_bits_retain(buffer[0]);
         if !status.is_ready() {
@@ -193,7 +201,10 @@ where
         let crc = Crc::<u8>::new(&CRC_8_NRSC_5);
         let mut digest = crc.digest();
         digest.update(data);
-        if digest.finalize() != crc_value {
+        let data_crc = digest.finalize();
+        if data_crc != crc_value {
+            #[cfg(feature = "defmt")]
+            info!("CRC Error: {} != {}", data_crc, crc_value);
             return Err(Error::InvalidCrc);
         }
         Ok(())

@@ -16,6 +16,8 @@ edition = "2021"
 [features]
 default = []
 async = []
+skip-crc = []
+defmt = ["dep:defmt"]
 
 [dependencies]
 bitflags = "2.8"
@@ -24,6 +26,7 @@ embedded-hal = "1.0"
 embedded-hal-async = "1.0"
 maybe-async-cfg = "0.2"
 weather-utils = { version = "0.3", features = ["no-std"] }
+defmt = { version = "1", optional = true }
 
 [dev-dependencies]
 approx = "0.5"
